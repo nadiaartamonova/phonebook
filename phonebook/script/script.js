@@ -65,7 +65,6 @@ const data = [
         return h1;
     };
 
-
     const createMain = () => {
         const main = document.createElement('div');
         const mainContainer = createContainer();
@@ -104,6 +103,7 @@ const data = [
             <th>FirstName</th>
             <th>LastName </th>
             <th>Phone number</th>
+            <th>Edit</th>
         </tr>
         `);
 
@@ -162,7 +162,6 @@ const data = [
 
     };
 
-
     const renderPhoneBook = (app, title) => {
         
         const header = createHeader();
@@ -191,11 +190,12 @@ const data = [
 
         return {
             list: table.tbody,
+            logo,
+            btnAdd: buttonGroup.btns[0],
+            formOverlay: form.overlay,
         }
     };
     
-
-
     const createRow = ({name: firstName, surname, phone}) => {
 
         const tr = document.createElement('tr');
@@ -205,6 +205,12 @@ const data = [
         const buttonDel = document.createElement('button');
         buttonDel.classList.add('del-icon');
         tdDel.append(buttonDel);
+
+        const tdEdit = document.createElement('td');
+        const buttonEdit = document.createElement('button');
+        buttonEdit.classList.add('edit-icon');
+        tdEdit.append(buttonEdit);
+
 
         const tdName = document.createElement('td');
         tdName.textContent = firstName;
@@ -216,25 +222,50 @@ const data = [
         const phoneLink = document.createElement('a');
         phoneLink.href = `tel:${phone}`;
         phoneLink.textContent = phone;
+
+        tr.phoneLink = phoneLink;
         tdPhone.append(phoneLink);
 
-        tr.append(tdDel, tdName, tdLastName, tdPhone);
+        tr.append(tdDel, tdName, tdLastName, tdPhone, tdEdit,);
 
         return tr;
+    }
+
+    const hoverRow = (allRow, logo) => {
+        const text = logo.textContent;
+        allRow.forEach(contact => {
+            contact.addEventListener('mouseenter', () => {
+                logo.textContent = contact.phoneLink.textContent;;
+            });
+
+            contact.addEventListener('mouseleave', () => {
+                logo.textContent = text;
+            });
+        });
     }
 
     const renderContacts = (elem, data) => {
         const allRow = data.map(createRow);
         elem.append(...allRow);
+
+        return allRow;
     };
 
     const init = (selectorApp, title) => {
         const app = document.querySelector(selectorApp);
         const phoneBook = renderPhoneBook(app, title);
 
-        const {list} = phoneBook;
+        const {list, logo, btnAdd, formOverlay} = phoneBook;
 
-        renderContacts(list, data);
+        const allRow = renderContacts(list, data);
+        hoverRow(allRow, logo);
+
+        const objEvent = {
+            handleEvent(event) {
+                formOverlay.classList.add('is-visible');
+            },
+        };
+        btnAdd.addEventListener('click', objEvent);
 
     };
 

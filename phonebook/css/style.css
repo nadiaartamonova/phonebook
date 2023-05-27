@@ -43,6 +43,18 @@ body {
   display: table-cell;
 }
 
+.edit-icon {
+  display: block;
+  width: 15px;
+  height: 15px;
+  border: none;
+  background-color: transparent;
+  background-image: url("../img/pencil.svg");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
 .btn-wrapper {
   margin-bottom: 30px;
 }
