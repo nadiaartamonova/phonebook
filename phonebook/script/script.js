@@ -1,28 +1,5 @@
 'use strict';
 
-const data = [
-    {
-      name: 'Иван',
-      surname: 'Петров',
-      phone: '+79514545454',
-    },
-    {
-      name: 'Игорь',
-      surname: 'Семёнов',
-      phone: '+79999999999',
-    },
-    {
-      name: 'Семён',
-      surname: 'Иванов',
-      phone: '+79800252525',
-    },
-    {
-      name: 'Мария',
-      surname: 'Попова',
-      phone: '+79876543210',
-    },
-  ];
-
 {
     const addContactData = (contact) => {
         setStorage('contactList', contact);
@@ -270,12 +247,14 @@ const data = [
         return data ? JSON.parse(data) : [];
     };
 
-    const setStorage = (key, newContact) => {
+
+
+    const setStorage = (key, value) => {
         const storageData = getStorage(key);
         if (storageData === null){
-            storageData = [newContact];
+            storageData = [value];
         } else{
-            storageData.push(newContact);
+            storageData.push(value);
         }
         localStorage.setItem(key, JSON.stringify(storageData));
     }
@@ -288,8 +267,9 @@ const data = [
 
     const init = (selectorApp, title) => {
         const data = getStorage('contactList');
-        console.log(data);
-
+        const sortBy = getStorage('sortBy');
+        console.log(sortBy);
+        
         const app = document.querySelector(selectorApp);
 
         const {
@@ -308,6 +288,8 @@ const data = [
         hoverRow(allRow, logo);
         deleteControl(btnDel, list, thead, logo);
         formControl(form, list, closeModal);
+        sortContacts(sortBy[0],list, logo);
+
     };
 
     const formControl = (form, list, closeModal) => {
@@ -349,12 +331,19 @@ const data = [
     };
 
     const deleteControl = (btnDel, list, thead, logo) => {
+
         btnDel.addEventListener('click', () => {
             document.querySelectorAll('.delete').forEach(del => {
                 del.classList.toggle('is-visible');
             })
         });
-        
+    
+        thead.addEventListener('click', (e) => {
+            console.log(list)
+            const sortBy = e.target.getAttribute('value').trim('');
+            setStorage('sortBy', sortBy);
+            sortContacts(sortBy, list, logo);
+        });
 
         list.addEventListener('click', (e) => {
             if(e.target.closest('.del-icon')){
@@ -365,31 +354,28 @@ const data = [
                 e.target.closest('.contact').remove();
             } 
         });
+    }
 
-        thead.addEventListener('click', (e) => {
-            const sortBy = e.target.getAttribute('value').trim('');
-            const sortedData = data.sort((a, b) => {
-                console.log(sortBy.trim(''));
-                const itemA = a[sortBy].toLowerCase();
-                const itemB = b[sortBy].toLowerCase();
-            
-                if (itemA < itemB) {
-                    return -1;
-                }
-                if (itemA > itemB) {
-                    return 1;
-                }
-                    return 0;
-            });
-            while (list.firstChild) {
-                list.removeChild(list.firstChild);
+    const sortContacts = (sortBy = 'name', list, logo) => {
+        const data = getStorage('contactList');
+        const sortedData = data.sort((a, b) => {
+            const itemA = a[sortBy].toLowerCase();
+            const itemB = b[sortBy].toLowerCase();
+        
+            if (itemA < itemB) {
+                return -1;
             }
-            const allRow = renderContacts(list, sortedData);
-
-            hoverRow(allRow, logo);
-
-
+            if (itemA > itemB) {
+                return 1;
+            }
+                return 0;
         });
+        while (list.firstChild) {
+            list.removeChild(list.firstChild);
+        }
+        const allRow = renderContacts(list, sortedData);
+
+        hoverRow(allRow, logo);
     }
 
 
