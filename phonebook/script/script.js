@@ -24,6 +24,10 @@ const data = [
   ];
 
 {
+    const addContactData = (contact) => {
+        setStorage('contactList', contact);
+    };
+
     const createContainer = () => {
         const container = document.createElement('div');
         container.classList.add('container');
@@ -130,8 +134,8 @@ const data = [
             </div>
 
             <div class = "form-group">
-                <label class = "form-label" for ="lastName">LastName: </label>
-                <input class = "form-input" name = "lastName" type = "text" requered placeholder = "last name">
+                <label class = "form-label" for ="surname">LastName: </label>
+                <input class = "form-input" name = "surname" type = "text" requered placeholder = "last name">
             </div>
 
             <div class = "form-group">
@@ -181,12 +185,12 @@ const data = [
             },
         ]);
         const table = createTable();
-        const form = createForm();
+        const { form, overlay } = createForm();
 
         const footer = createFooter(title);
 
         header.headerContainer.append(logo);
-        main.mainContainer.append(buttonGroup.btnWrapper, table, form.overlay, footer);
+        main.mainContainer.append(buttonGroup.btnWrapper, table, overlay, footer);
         app.append(header, main);
 
         return {
@@ -195,8 +199,8 @@ const data = [
             logo,
             btnAdd: buttonGroup.btns[0],
             btnDel: buttonGroup.btns[1],
-            formOverlay: form.overlay,
-            form: form.form,
+            formOverlay: overlay,
+            form,
         }
     };
     
@@ -224,6 +228,7 @@ const data = [
         tdLastName.textContent = surname;
 
         const tdPhone = document.createElement('td');
+        tdPhone.classList.add('phone__number');
         const phoneLink = document.createElement('a');
         phoneLink.href = `tel:${phone}`;
         phoneLink.textContent = phone;
@@ -235,6 +240,10 @@ const data = [
 
         return tr;
     }
+
+    const addContactPage = (contact, list) => {
+        list.append(createRow(contact));
+    };
 
     const hoverRow = (allRow, logo) => {
         const text = logo.textContent;
@@ -256,9 +265,32 @@ const data = [
         return allRow;
     };
 
+    const getStorage = (key) => {
+        const data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : [];
+    };
+
+    const setStorage = (key, newContact) => {
+        const storageData = getStorage(key);
+        if (storageData === null){
+            storageData = [newContact];
+        } else{
+            storageData.push(newContact);
+        }
+        localStorage.setItem(key, JSON.stringify(storageData));
+    }
+
+    const removeStorage = (number) => {
+        let data = getStorage("contactList");
+        data = data.filter(contact => contact.phone !== number);
+        localStorage.setItem("contactList", JSON.stringify(data));
+    }
+
     const init = (selectorApp, title) => {
+        const data = getStorage('contactList');
+        console.log(data);
+
         const app = document.querySelector(selectorApp);
-        const phoneBook = renderPhoneBook(app, title);
 
         const {
             thead,
@@ -268,32 +300,72 @@ const data = [
             btnDel,
             formOverlay, 
             form,
-        } = phoneBook;
+        } = renderPhoneBook(app, title);;
 
         const allRow = renderContacts(list, data);
+        const {closeModal} = modalControl(btnAdd, formOverlay);
+        
         hoverRow(allRow, logo);
+        deleteControl(btnDel, list, thead, logo);
+        formControl(form, list, closeModal);
+    };
 
-        btnAdd.addEventListener('click', () => {
-            formOverlay.classList.add('is-visible');
-        });
-        btnDel.addEventListener('click', () => {
-            document.querySelectorAll('.delete').forEach(del => {
-                del.classList.toggle('is-visible');
-            })
+    const formControl = (form, list, closeModal) => {
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+
+            const newContact = Object.fromEntries(formData);
+            addContactData(newContact);
+            addContactPage(newContact, list);
+
+            form.reset();
+            closeModal();
         })
+    }
+
+    const modalControl  = (btnAdd, formOverlay) => {
+
+        const openModal = () => {
+            formOverlay.classList.add('is-visible');
+        };
+
+        const closeModal = () => {
+            formOverlay.classList.remove('is-visible');
+        }
+
+        btnAdd.addEventListener('click', openModal);
 
         formOverlay.addEventListener('click', (e) => {
             const target = e.target;
             if(target === formOverlay || target.classList.contains('close')){
-                formOverlay.classList.remove('is-visible');
+                closeModal();
             }           
         });
 
+        return {
+            closeModal,
+        }
+    };
+
+    const deleteControl = (btnDel, list, thead, logo) => {
+        btnDel.addEventListener('click', () => {
+            document.querySelectorAll('.delete').forEach(del => {
+                del.classList.toggle('is-visible');
+            })
+        });
+        
+
         list.addEventListener('click', (e) => {
             if(e.target.closest('.del-icon')){
+                const contact = e.target.closest('.contact');
+                const number = contact.querySelector('.phone__number').textContent;
+                removeStorage(number);
+
                 e.target.closest('.contact').remove();
-            }
+            } 
         });
+
         thead.addEventListener('click', (e) => {
             const sortBy = e.target.getAttribute('value').trim('');
             const sortedData = data.sort((a, b) => {
@@ -312,17 +384,14 @@ const data = [
             while (list.firstChild) {
                 list.removeChild(list.firstChild);
             }
-            const allRow2 = renderContacts(list, sortedData);
+            const allRow = renderContacts(list, sortedData);
 
-            hoverRow(allRow2, logo);
+            hoverRow(allRow, logo);
 
 
         });
+    }
 
-
-
-
-    };
 
     window.phoneBookInit = init;
 }
